@@ -1,0 +1,74 @@
+version: '3.5'
+
+services:
+  # ---------------
+  # inquiry3.local
+  # ---------------
+  web:
+    image: inquiry3.local
+    container_name: inquiry3.local
+    build:
+      # contextが場所
+      context: ./nginx
+      #  dockerfile/ ファイル名
+      dockerfile: Dockerfile
+      # ↓systemctlというコマンドを打つためのおまじない
+    tty: true
+    stdin_open: true
+    privileged: true
+    command: /sbin/init
+    volumes:
+      # nginxの設定ファイル
+      # 「.conf」は（ファイル）「conf.d」は（フォルダ）
+      - ./nginx/data/conf.d:/etc/nginx/conf.d
+      - ./nginx/entrypoint.sh:/entrypoint.sh
+    #   - ./nginx/dbsocket/myconf:var/lib/mysql/mysql.sock
+    #   var/lib/mysql/mysql.sock
+      # documetn root(表示したいファイル)
+      - ./src:/data/inquiry3.local/src
+      - ./nginx/logs:/data/logs/nginx
+    #   - ./nginx/php.ini:/etc/php.ini
+    ports:
+      - 8080:80
+    # depends_on:
+    # #   - reverse-proxy
+    #   - mysql.inquiry3.local
+    environment:
+      TZ: "Asia/Tokyo"
+    # networks:
+    #   app_net:
+    #       ipv4_address: 172.1.0.2
+
+  # MySQL
+  mysql.inquiry3.local:
+    image: mysql:5.7
+    container_name: mysql.inquiry3.mac
+    environment:
+      MYSQL_ROOT_PASSWORD: pass1111
+      MYSQL_DATABASE: inquiry_mac
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    #   DB_SOCKET: /var/run/mysqld/mysqld.sock
+      TZ: 'Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --secure-file-priv=""
+    volumes:
+    - ./mysql/data:/var/lib/mysql
+    - ./mysql/my.cnf:/etc/my.cnf
+    - ./mysql/sql:/docker-entrypoint-initdb.d
+    # - dbsocket:/var/run/mysqld
+    
+    # - ./docker/mysql/csv:/tmp/data.csv
+    # - ./docker/mysql/data:/tmp
+    ports:
+    - 3306:3306
+    # networks:
+    #   app_net:
+    #       ipv4_address: 172.1.0.5
+# networks:
+#   app_net:
+#       name: app_net
+#       ipam:
+#           config:
+            # 172.0.0.1〜172.0.0.254
+            #サブネットとはどこからどこまでのIPの範囲を同じネットワークとするか
+              # - subnet: 172.1.0.0/24
